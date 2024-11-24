@@ -1,5 +1,17 @@
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
+<br />
+<div align="center">
+  <a href="https://github.com/Sebastien-Le/PolisheR">
+    <img src="images/polisher.png" alt="Logo" width="597" height="200">
+  </a>
+
+  <h3 align="center">NaileR</h3>
+
+  <p align="center">
+    <i>When NaileR meets Shiny...</i>
+</div>
+
+
 
 # PolisheR
 
