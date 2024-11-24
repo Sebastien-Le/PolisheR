@@ -39,7 +39,9 @@ my_anova_function <- function(data, formula, custom_text_1, custom_text_2, param
 #' @param dataset A data frame containing the data to be analyzed.
 #' @return This function does not return a value; it launches a Shiny app.
 #' @export
+#' @import shiny
 #' @importFrom dplyr %>%
+#' @importFrom dplyr all_of
 #'
 #' @examples
 #' \dontrun{
