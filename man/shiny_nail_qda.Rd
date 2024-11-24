@@ -21,8 +21,9 @@ The app allows users to explore and analyze their dataset.
 # Processing time is often longer than ten seconds
 # because the function uses a large language model.
 
-### Example 1: Fisher's iris ###
-library(NaileR)
-data(iris)
+library(SensoMineR)
+data(chocolates)
+shiny_nail_qda(sensochoc)
+
 }
 }

@@ -15,4 +15,3 @@ Imports:
     shiny
 Depends: 
     R (>= 3.5.0)
-LazyData: true

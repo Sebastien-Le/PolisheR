@@ -48,9 +48,10 @@ my_anova_function <- function(data, formula, custom_text_1, custom_text_2, param
 #' # Processing time is often longer than ten seconds
 #' # because the function uses a large language model.
 #'
-#' ### Example 1: Fisher's iris ###
-#' library(NaileR)
-#' data(iris)
+#'library(SensoMineR)
+#'data(chocolates)
+#'shiny_nail_qda(sensochoc)
+#'
 #' }
 
 shiny_nail_qda <- function(dataset) {
