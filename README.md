@@ -26,7 +26,6 @@ You can install the development version of PolisheR like so:
 
 ``` r
 devtools::install_github('Sebastien-Le/PolisheR')
-library(PolisheR)
 ```
 
 ## Example
