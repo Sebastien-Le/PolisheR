@@ -8,7 +8,7 @@
   <h3 align="center">NaileR</h3>
 
   <p align="center">
-    <i>When NaileR meets Shiny...</i>
+    <i>When NaileR meets Shiny...Give NaileR a shiny new look with PolisheR!</i>
 </div>
 
 
