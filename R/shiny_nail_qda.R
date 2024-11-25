@@ -3,7 +3,7 @@ library(dplyr)
 
 
 #' @importFrom NaileR nail_qda
-my_anova_function <- function(data, formula, custom_text_1, custom_text_2, param1, param2, param3, comprises) {
+nail_qda_polish <- function(data, formula, custom_text_1, custom_text_2, param1, param2, param3, comprises) {
 
   res_nail_qda <- NaileR::nail_qda(data, formul = formula, firstvar = 3,
                                    proba = comprises,
@@ -31,10 +31,10 @@ my_anova_function <- function(data, formula, custom_text_1, custom_text_2, param
 
 }
 
-#' Launch the Shiny Nail QDA App
+#' Launch a Shiny app for analyzing QDA data
 #'
-#' This function launches a Shiny app for Nail QDA analysis.
-#' The app allows users to explore and analyze their dataset.
+#' This function launches a Shiny app for analyzing QDA data with the 'Nailer' package.
+#' The app allows users to explore and analyze their QDA dataset.
 #'
 #' @param dataset A data frame containing the data to be analyzed.
 #' @return This function does not return a value; it launches a Shiny app.
@@ -169,7 +169,7 @@ shiny_nail_qda <- function(dataset) {
       comprises <- input$comprises
 
       # Run your function with the updated parameters
-      my_anova_function(selected_data(), formula, custom_text_1, custom_text_2, param1, param2, param3, comprises)
+      nail_qda_polish(selected_data(), formula, custom_text_1, custom_text_2, param1, param2, param3, comprises)
     })
 
     # Display the combined text result

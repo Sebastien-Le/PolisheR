@@ -2,7 +2,7 @@
 % Please edit documentation in R/shiny_nail_qda.R
 \name{shiny_nail_qda}
 \alias{shiny_nail_qda}
-\title{Launch the Shiny Nail QDA App}
+\title{Launch a Shiny app for analyzing QDA data}
 \usage{
 shiny_nail_qda(dataset)
 }
@@ -13,8 +13,8 @@ shiny_nail_qda(dataset)
 This function does not return a value; it launches a Shiny app.
 }
 \description{
-This function launches a Shiny app for Nail QDA analysis.
-The app allows users to explore and analyze their dataset.
+This function launches a Shiny app for analyzing QDA data with the 'Nailer' package.
+The app allows users to explore and analyze their QDA dataset.
 }
 \examples{
 \dontrun{

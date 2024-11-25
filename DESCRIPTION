@@ -4,7 +4,7 @@ Version: 1.0.0
 Authors@R: 
     person('Sébastien', 'Lê', role = c('aut', 'cre'), email = 'sebastien.le@institut-agro.fr',
     comment = c(ORCID = "0000-0001-8814-6714"))
-Description: A very very small package for more convenient use of 'NaileR'.
+Description: A very very small package for more convenient use of 'NaileR'. You provide QDA data. It provides a description of the stimuli based on a Large Language Model.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
