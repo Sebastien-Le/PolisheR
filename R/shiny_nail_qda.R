@@ -31,7 +31,7 @@ nail_qda_polish <- function(data, formula, custom_text_1, custom_text_2, param1,
 
 }
 
-#' Launch a Shiny app for analyzing QDA data
+#' Launch a Shiny app for analyzing Quantitative Descriptive Analysis data (QDA)
 #'
 #' This function launches a Shiny app for analyzing QDA data with the 'Nailer' package.
 #' The app allows users to explore and analyze their QDA dataset.

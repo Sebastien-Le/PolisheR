@@ -2,7 +2,7 @@
 % Please edit documentation in R/shiny_nail_qda.R
 \name{shiny_nail_qda}
 \alias{shiny_nail_qda}
-\title{Launch a Shiny app for analyzing QDA data}
+\title{Launch a Shiny app for analyzing Quantitative Descriptive Analysis data (QDA)}
 \usage{
 shiny_nail_qda(dataset)
 }
