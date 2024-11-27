@@ -5,7 +5,7 @@
     <img src="images/polisher.png" alt="Logo" width="597" height="200">
   </a>
 
-  <h3 align="center">NaileR</h3>
+  <h3 align="center">PolisheR</h3>
 
   <p align="center">
     <i>When NaileR meets Shiny...Give NaileR a shiny new look with PolisheR!</i>
