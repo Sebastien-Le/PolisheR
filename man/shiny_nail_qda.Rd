@@ -17,7 +17,7 @@ This function launches a Shiny app for analyzing QDA data with the 'Nailer' pack
 The app allows users to explore and analyze their QDA dataset.
 }
 \examples{
-\dontrun{
+if(interactive()){
 # Processing time is often longer than ten seconds
 # because the function uses a large language model.
 

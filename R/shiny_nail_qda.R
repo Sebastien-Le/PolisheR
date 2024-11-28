@@ -44,7 +44,7 @@ nail_qda_polish <- function(data, formula, custom_text_1, custom_text_2, param1,
 #' @importFrom dplyr all_of
 #'
 #' @examples
-#' \dontrun{
+#' if(interactive()){
 #' # Processing time is often longer than ten seconds
 #' # because the function uses a large language model.
 #'
