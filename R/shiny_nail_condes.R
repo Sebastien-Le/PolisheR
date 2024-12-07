@@ -3,9 +3,9 @@ library(dplyr)
 library(shinycssloaders)
 
 #' @importFrom NaileR nail_qda
-nail_condes_polish <- function(dataset, introduction, request, proba, generate, quanti_threshold, quanti_cat, model = "llama3") {
+nail_condes_polish <- function(data_modif, introduction, request, proba, generate, quanti_threshold, quanti_cat, model = "llama3") {
   result <- NaileR::nail_condes(
-    dataset,
+    data_modif,
     num.var = 1,
     introduction = introduction,
     request = request,
@@ -19,12 +19,12 @@ nail_condes_polish <- function(dataset, introduction, request, proba, generate, 
   if (generate) result$response else result
 }
 
-#' Launch a Shiny app for analyzing Quantitative Descriptive Analysis data (QDA)
+#' Launch a Shiny app for interpreting a (latent) continuous variable
 #'
-#' This function launches a Shiny app for analyzing QDA data with the 'Nailer' package.
-#' The app allows users to explore and analyze their QDA dataset.
+#' This function launches a Shiny app for interpreting a (latent)
+#' continuous variablewith the 'Nailer' package.
 #'
-#' @param data A data frame containing the data to be analyzed.
+#' @param dataset A data frame containing the data to be analyzed.
 #' @return This function does not return a value; it launches a Shiny app.
 #' @export
 #' @import shiny
@@ -41,16 +41,17 @@ nail_condes_polish <- function(dataset, introduction, request, proba, generate, 
 #'library(FactoMineR)
 #'library(stringr)
 #'data(beard_cont)
-#'set.seed(1)
+#'
 #'res_ca_beard <- FactoMineR::CA(beard_cont, graph = FALSE)
-#'FactoMineR::plot.CA(res_ca_beard, invisible = 'col')
 #'
 #'beard_work <- res_ca_beard$row$coord |> as.data.frame()
 #'beard_work <- beard_work[,1] |> cbind(beard_cont)
+#'
 #'intro_beard <- "These data refer to 8 types of beards.
 #'Each beard was evaluated by 62 assessors."
 #'intro_beard <- gsub('\n', ' ', intro_beard) |>
 #'stringr::str_squish()
+#'
 #'req_beard <- "Please explain what differentiates beards
 #'on both sides of the scale.
 #'Then, give the scale a name."
@@ -58,16 +59,17 @@ nail_condes_polish <- function(dataset, introduction, request, proba, generate, 
 #'stringr::str_squish()
 #'
 #'shiny_nail_condes(beard_work)
+#'
 #' }
 
-shiny_nail_condes <- function(data) {
+shiny_nail_condes <- function(dataset) {
   ui <- fluidPage(
     titlePanel("Interpret a Continuous (Latent) Variable"),
     sidebarLayout(
       sidebarPanel(
         selectInput("selected_var", "Select a Continuous Variable:",
-                    choices = names(data)[sapply(data, is.numeric)],
-                    selected = names(data)[1]),
+                    choices = names(dataset)[sapply(dataset, is.numeric)],
+                    selected = names(dataset)[1]),
         textAreaInput("introduction", "Prompt Introduction:", placeholder = "Enter introduction here..."),
         textAreaInput("request", "Prompt Task:", placeholder = "Enter request here..."),
         numericInput("quanti_threshold", "Quantitative Threshold:", value = 0, step = 0.5),
@@ -118,7 +120,7 @@ shiny_nail_condes <- function(data) {
     modified_data <- eventReactive(input$run, {
       req(input$selected_var)
       selected_var <- input$selected_var
-      data[, c(selected_var, setdiff(names(data), selected_var))]
+      dataset[, c(selected_var, setdiff(names(dataset), selected_var))]
     })
 
     # Reactive analysis results
@@ -127,7 +129,7 @@ shiny_nail_condes <- function(data) {
       params <- debug_input()  # Consolidated debug data
       tryCatch({
         nail_condes_polish(
-          dataset = modified_data(),
+          data_modif = modified_data(),
           introduction = params$introduction,
           request = params$request,
           proba = params$proba,

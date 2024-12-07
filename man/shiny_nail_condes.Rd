@@ -2,19 +2,19 @@
 % Please edit documentation in R/shiny_nail_condes.R
 \name{shiny_nail_condes}
 \alias{shiny_nail_condes}
-\title{Launch a Shiny app for analyzing Quantitative Descriptive Analysis data (QDA)}
+\title{Launch a Shiny app for interpreting a (latent) continuous variable}
 \usage{
-shiny_nail_condes(data)
+shiny_nail_condes(dataset)
 }
 \arguments{
-\item{data}{A data frame containing the data to be analyzed.}
+\item{dataset}{A data frame containing the data to be analyzed.}
 }
 \value{
 This function does not return a value; it launches a Shiny app.
 }
 \description{
-This function launches a Shiny app for analyzing QDA data with the 'Nailer' package.
-The app allows users to explore and analyze their QDA dataset.
+This function launches a Shiny app for interpreting a (latent)
+continuous variablewith the 'Nailer' package.
 }
 \examples{
 if(interactive()){
@@ -24,16 +24,17 @@ if(interactive()){
 library(FactoMineR)
 library(stringr)
 data(beard_cont)
-set.seed(1)
+
 res_ca_beard <- FactoMineR::CA(beard_cont, graph = FALSE)
-FactoMineR::plot.CA(res_ca_beard, invisible = 'col')
 
 beard_work <- res_ca_beard$row$coord |> as.data.frame()
 beard_work <- beard_work[,1] |> cbind(beard_cont)
+
 intro_beard <- "These data refer to 8 types of beards.
 Each beard was evaluated by 62 assessors."
 intro_beard <- gsub('\n', ' ', intro_beard) |>
 stringr::str_squish()
+
 req_beard <- "Please explain what differentiates beards
 on both sides of the scale.
 Then, give the scale a name."
@@ -41,5 +42,6 @@ req_beard <- gsub('\n', ' ', req_beard) |>
 stringr::str_squish()
 
 shiny_nail_condes(beard_work)
+
 }
 }
