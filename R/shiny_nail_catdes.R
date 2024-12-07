@@ -1,30 +1,27 @@
 library(shiny)
-library(dplyr)
+library(NaileR)
 library(shinycssloaders)
 
-#' @importFrom NaileR nail_condes
-nail_condes_polish <- function(data_modif, introduction, request, proba, generate, quanti_threshold, quanti_cat, model = "llama3") {
-  result <- NaileR::nail_condes(
-    data_modif,
-    num.var = 1,
-    introduction = introduction,
-    request = request,
-    model = model,
-    quanti.threshold = quanti_threshold,
-    quanti.cat = quanti_cat,
-    weights = NULL,
-    proba = proba,
-    generate = generate
-  )
-  if (generate) result$response else result
+#' @importFrom NaileR nail_catdes
+nail_catdes_polish <- function(data_modif, introduction, request, proba, generate, model = "llama3") {
+result <- nail_catdes(
+  data_modif,
+  num.var = 1,
+  introduction = introduction,
+  request = request,
+  model = model,
+  proba = proba,
+  generate = generate
+)
+if (generate) result$response else result
 }
 
-#' Launch a Shiny app for interpreting a (latent) continuous variable
+#' Launch a Shiny app for interpreting a (latent) categorical variable
 #'
 #' This function launches a Shiny app for interpreting a (latent)
-#' continuous variable with the 'Nailer' package.
+#' categorical variable with the 'Nailer' package.
 #'
-#' @param dataset A data frame containing the continuous variable to be analyzed.
+#' @param dataset A data frame containing the categorical variable to be analyzed.
 #' @return This function does not return a value; it launches a Shiny app.
 #' @export
 #' @import shiny
@@ -38,52 +35,43 @@ nail_condes_polish <- function(data_modif, introduction, request, proba, generat
 #' # Processing time is often longer than ten seconds
 #' # because the function uses a large language model.
 #'
-#'library(FactoMineR)
-#'library(stringr)
-#'library(NaileR)
-#'data(beard_cont)
+#' library(NaileR)
+#' data(iris)
+#' intro_iris <- "A study measured various parts of iris flowers
+#' from 3 different species: setosa, versicolor and virginica.
+#' I will give you the results from this study.
+#' You will have to identify what sets these flowers apart."
+#' intro_iris <- gsub('\n', ' ', intro_iris) |>
+#' stringr::str_squish()
+#' intro_iris
 #'
-#'res_ca_beard <- FactoMineR::CA(beard_cont, graph = FALSE)
+#' req_iris <- "Please explain what makes each species distinct.
+#' Also, tell me which species has the biggest flowers,
+#' and which species has the smallest."
+#' req_iris <- gsub('\n', ' ', req_iris) |>
+#' stringr::str_squish()
+#' req_iris
 #'
-#'beard_work <- res_ca_beard$row$coord |> as.data.frame()
-#'beard_work <- beard_work[,1] |> cbind(beard_cont)
-#'
-#'intro_beard <- "These data refer to 8 types of beards.
-#'Each beard was evaluated by 62 assessors."
-#'intro_beard <- gsub('\n', ' ', intro_beard) |>
-#'stringr::str_squish()
-#'
-#'req_beard <- "Please explain what differentiates beards
-#'on both sides of the scale.
-#'Then, give the scale a name."
-#'req_beard <- gsub('\n', ' ', req_beard) |>
-#'stringr::str_squish()
-#'
-#'shiny_nail_condes(beard_work)
-#'
+#' shiny_nail_catdes(iris)
 #' }
 
-shiny_nail_condes <- function(dataset) {
+shiny_nail_catdes <- function(dataset) {
   ui <- fluidPage(
-    titlePanel("Interpret a Continuous (Latent) Variable"),
+    titlePanel("Interpret a Categorical (Latent) Variable"),
     sidebarLayout(
       sidebarPanel(
-        selectInput("selected_var", "Select a Continuous Variable:",
-                    choices = names(dataset)[sapply(dataset, is.numeric)],
+        selectInput("selected_var", "Select a Categorical Variable:",
+                    choices = names(dataset)[sapply(dataset, is.factor)],
                     selected = names(dataset)[1]),
         textAreaInput("introduction", "Prompt Introduction:", placeholder = "Enter introduction here..."),
         textAreaInput("request", "Prompt Task:", placeholder = "Enter request here..."),
-        numericInput("quanti_threshold", "Quantitative Threshold:", value = 0, step = 0.5),
-        textInput("quanti_cat_1", "Category for Above Average:", value = "Significantly above average"),
-        textInput("quanti_cat_2", "Category for Below Average:", value = "Significantly below average"),
-        textInput("quanti_cat_3", "Category for Average:", value = "Average"),
         textInput("model", "Model (llama3 by Default):", value = "llama3"),  # Changed to textInput
         sliderInput("proba", "Significance Threshold:", min = 0, max = 1, value = 0.05, step = 0.05),
         checkboxInput("generate", "Run the LLM (return the prompt if FALSE)", value = FALSE),
         actionButton("run", "Run Analysis")
       ),
       mainPanel(
-        h4("nail_condes results: a prompt or the result of the request"),
+        h4("nail_catdes results: a prompt or the result of the request"),
         verbatimTextOutput("function_output") %>% shinycssloaders::withSpinner(),
         tags$style(
           "#function_output {
@@ -111,8 +99,6 @@ shiny_nail_condes <- function(dataset) {
         request = input$request,
         proba = input$proba,
         generate = input$generate,
-        quanti_threshold = input$quanti_threshold,
-        quanti_cat = c(input$quanti_cat_1, input$quanti_cat_2, input$quanti_cat_3),
         model = input$model
       )
     }
@@ -129,14 +115,12 @@ shiny_nail_condes <- function(dataset) {
       req(modified_data())
       params <- debug_input()  # Consolidated debug data
       tryCatch({
-        nail_condes_polish(
+        nail_catdes_polish(
           data_modif = modified_data(),
           introduction = params$introduction,
           request = params$request,
           proba = params$proba,
           generate = params$generate,
-          quanti_threshold = params$quanti_threshold,
-          quanti_cat = params$quanti_cat,
           model = params$model  # Pass the model input
         )
       }, error = function(e) {

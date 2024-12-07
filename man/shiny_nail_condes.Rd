@@ -7,14 +7,14 @@
 shiny_nail_condes(dataset)
 }
 \arguments{
-\item{dataset}{A data frame containing the data to be analyzed.}
+\item{dataset}{A data frame containing the continuous variable to be analyzed.}
 }
 \value{
 This function does not return a value; it launches a Shiny app.
 }
 \description{
 This function launches a Shiny app for interpreting a (latent)
-continuous variablewith the 'Nailer' package.
+continuous variable with the 'Nailer' package.
 }
 \examples{
 if(interactive()){
@@ -23,6 +23,7 @@ if(interactive()){
 
 library(FactoMineR)
 library(stringr)
+library(NaileR)
 data(beard_cont)
 
 res_ca_beard <- FactoMineR::CA(beard_cont, graph = FALSE)
