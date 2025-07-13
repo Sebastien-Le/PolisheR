@@ -17,6 +17,6 @@ Imports:
     FactoMineR,
     stringr
 Depends: 
-    R (>= 3.5.0)
+    R (>= 4.1.0)
 Suggests:
     SensoMineR
