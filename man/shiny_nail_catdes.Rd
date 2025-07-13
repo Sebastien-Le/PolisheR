@@ -2,13 +2,16 @@
 % Please edit documentation in R/shiny_nail_catdes.R
 \name{shiny_nail_catdes}
 \alias{shiny_nail_catdes}
-\title{Launch a Shiny app for interpreting a (latent) categorical variable}
+\title{Shiny app principale}
 \usage{
 shiny_nail_catdes(dataset)
 }
 \arguments{
-\item{dataset}{A data frame containing the categorical variable to be analyzed.}
+\item{dataset}{A data frame containing at least one categorical variable (factor).}
+}
+\value{
+Launches a Shiny web application.
 }
 \description{
-Launch a Shiny app for interpreting a (latent) categorical variable
+Shiny app principale
 }

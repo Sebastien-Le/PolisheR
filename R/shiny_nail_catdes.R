@@ -4,7 +4,8 @@ library(shinycssloaders)
 library(stringr)
 
 #' @importFrom NaileR nail_catdes
-nail_catdes_polish <- function(data_modif, introduction, request, proba, generate, model = "llama3") {
+nail_catdes_polish <- function(data_modif, introduction, request, proba, generate,
+                               model = "llama3", quali.sample = 1, quanti.sample = 1, isolate.groups = FALSE) {
   result <- nail_catdes(
     data_modif,
     num.var = 1,
@@ -12,26 +13,40 @@ nail_catdes_polish <- function(data_modif, introduction, request, proba, generat
     request = request,
     model = model,
     proba = proba,
-    generate = generate
+    generate = generate,
+    quali.sample = quali.sample,
+    quanti.sample = quanti.sample,
+    isolate.groups = isolate.groups
   )
-  if (generate) result$response else result
+
+  if (generate) {
+    if (is.list(result) && all(sapply(result, function(x) "response" %in% names(x)))) {
+      # Si plusieurs résultats (un par groupe), concatène les réponses
+      return(paste(sapply(result, function(x) x$response), collapse = "\n\n---\n\n"))
+    } else {
+      return(result$response)
+    }
+  } else {
+    if (is.list(result) && is.null(names(result))) {
+      return(paste(result, collapse = "\n\n---\n\n"))
+    } else {
+      return(result)
+    }
+  }
 }
 
-#' Launch a Shiny app for interpreting a (latent) categorical variable
+#' Shiny app principale
+#' @param dataset A data frame containing at least one categorical variable (factor).
 #'
-#' @param dataset A data frame containing the categorical variable to be analyzed.
+#' @return Launches a Shiny web application.
 #' @export
 shiny_nail_catdes <- function(dataset) {
-  # Vérification préalable
   qual_vars <- names(dataset)[sapply(dataset, is.factor)]
   if (length(qual_vars) == 0) {
     stop("The dataset must contain at least one categorical (factor) variable.")
   }
 
-  # Fonction utilitaire de nettoyage
-  clean_text <- function(x) {
-    str_squish(gsub('\n', ' ', x))
-  }
+  clean_text <- function(x) str_squish(gsub('\n', ' ', x))
 
   ui <- fluidPage(
     titlePanel("Interpret a Categorical (Latent) Variable"),
@@ -42,10 +57,15 @@ shiny_nail_catdes <- function(dataset) {
         selectInput("selected_var", "Select a Categorical Variable:",
                     choices = qual_vars,
                     selected = qual_vars[1]),
-        textAreaInput("introduction", "Prompt Introduction:", placeholder = "Enter introduction here..."),
-        textAreaInput("request", "Prompt Task:", placeholder = "Enter request here..."),
-        textInput("model", "Model (llama3 by Default):", value = "llama3"),
+        textAreaInput("introduction", "Prompt Introduction:",
+                      value = "For this study, observations were grouped according to their similarities."),
+        textAreaInput("request", "Prompt Task:",
+                      value = "Based on the results, please describe what characterize the observations of each group and what set them apart from the other groups. Then, based on these characteristics, give each group a new name."),
         sliderInput("proba", "Significance Threshold:", min = 0, max = 1, value = 0.05, step = 0.05),
+        sliderInput("quali_sample", "Qualitative Sampling (quali.sample):", min = 0.0, max = 1, value = 1, step = 0.05),
+        sliderInput("quanti_sample", "Quantitative Sampling (quanti.sample):", min = 0.0, max = 1, value = 1, step = 0.05),
+        checkboxInput("isolate_groups", "Describe Each Group Separately (isolate.groups)", value = FALSE),
+        textInput("model", "Model (llama3 by Default):", value = "llama3"),
         checkboxInput("generate", "Run the LLM (return the prompt if FALSE)", value = FALSE),
         actionButton("run", "Run Analysis")
       ),
@@ -64,7 +84,7 @@ shiny_nail_catdes <- function(dataset) {
         ),
         tags$style(
           "#function_output {
-            height: 300px;
+            height: 400px;
             width: 100%;
             overflow-y: scroll;
             overflow-x: auto;
@@ -80,7 +100,6 @@ shiny_nail_catdes <- function(dataset) {
   )
 
   server <- function(input, output, session) {
-    # Nettoyage et collecte des entrées
     debug_input <- function() {
       list(
         selected_var = input$selected_var,
@@ -88,30 +107,29 @@ shiny_nail_catdes <- function(dataset) {
         request = clean_text(input$request),
         proba = input$proba,
         generate = input$generate,
-        model = input$model
+        model = input$model,
+        quali.sample = input$quali_sample,
+        quanti.sample = input$quanti_sample,
+        isolate.groups = input$isolate_groups
       )
     }
 
-    # Affichage des levels
     output$factor_levels <- renderPrint({
       req(input$selected_var)
       levels(dataset[[input$selected_var]])
     })
 
-    # Affichage des effectifs
     output$factor_counts <- renderPrint({
       req(input$selected_var)
       table(dataset[[input$selected_var]])
     })
 
-    # Données modifiées : la variable choisie est placée en première colonne
     modified_data <- eventReactive(input$run, {
       req(input$selected_var)
       selected_var <- input$selected_var
       dataset[, c(selected_var, setdiff(names(dataset), selected_var))]
     })
 
-    # Appel à nail_catdes
     analysis_results <- eventReactive(input$run, {
       req(modified_data())
       params <- debug_input()
@@ -122,19 +140,32 @@ shiny_nail_catdes <- function(dataset) {
           request = params$request,
           proba = params$proba,
           generate = params$generate,
-          model = params$model
+          model = params$model,
+          quali.sample = params$quali.sample,
+          quanti.sample = params$quanti.sample,
+          isolate.groups = params$isolate.groups
         )
       }, error = function(e) {
         paste("Error:", e$message)
       })
     })
 
-    # Affichage du résultat
+  #   output$function_output <- renderPrint({
+  #     req(analysis_results())
+  #     cat(analysis_results())
+  #   })
+  # }
+
     output$function_output <- renderPrint({
       req(analysis_results())
-      cat(analysis_results())
-    })
-  }
+      result <- analysis_results()
 
+      if (is.list(result)) {
+        cat(paste(unlist(result), collapse = "\n\n---\n\n"))
+      } else {
+        cat(result)
+      }
+    })
+}
   shinyApp(ui, server)
 }

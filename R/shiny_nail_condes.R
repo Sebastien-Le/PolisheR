@@ -3,7 +3,8 @@ library(dplyr)
 library(shinycssloaders)
 
 #' @importFrom NaileR nail_condes
-nail_condes_polish <- function(data_modif, introduction, request, proba, generate, quanti_threshold, quanti_cat, model = "llama3") {
+nail_condes_polish <- function(data_modif, introduction, request, proba, generate,
+                               quanti_threshold, quanti_cat, sample_pct, model = "llama3") {
   result <- NaileR::nail_condes(
     data_modif,
     num.var = 1,
@@ -14,6 +15,7 @@ nail_condes_polish <- function(data_modif, introduction, request, proba, generat
     quanti.cat = quanti_cat,
     weights = NULL,
     proba = proba,
+    sample.pct = sample_pct,
     generate = generate
   )
   if (generate) result$response else result
@@ -64,6 +66,9 @@ nail_condes_polish <- function(data_modif, introduction, request, proba, generat
 #' }
 
 shiny_nail_condes <- function(dataset) {
+
+  clean_text <- function(x) stringr::str_squish(gsub('\n', ' ', x))
+
   ui <- fluidPage(
     titlePanel("Interpret a Continuous (Latent) Variable"),
     sidebarLayout(
@@ -77,7 +82,8 @@ shiny_nail_condes <- function(dataset) {
         textInput("quanti_cat_1", "Category for Above Average:", value = "Significantly above average"),
         textInput("quanti_cat_2", "Category for Below Average:", value = "Significantly below average"),
         textInput("quanti_cat_3", "Category for Average:", value = "Average"),
-        textInput("model", "Model (llama3 by Default):", value = "llama3"),  # Changed to textInput
+        sliderInput("sample_pct", "Proportion of Significant Variables (sample.pct):", min = 0, max = 1, value = 1, step = 0.05),
+        textInput("model", "Model (llama3 by Default):", value = "llama3"),
         sliderInput("proba", "Significance Threshold:", min = 0, max = 1, value = 0.05, step = 0.05),
         checkboxInput("generate", "Run the LLM (return the prompt if FALSE)", value = FALSE),
         actionButton("run", "Run Analysis")
@@ -103,31 +109,29 @@ shiny_nail_condes <- function(dataset) {
   )
 
   server <- function(input, output, session) {
-    # Helper function for debugging
     debug_input <- function() {
       list(
         selected_var = input$selected_var,
-        introduction = input$introduction,
-        request = input$request,
+        introduction = clean_text(input$introduction),
+        request = clean_text(input$request),
         proba = input$proba,
         generate = input$generate,
         quanti_threshold = input$quanti_threshold,
         quanti_cat = c(input$quanti_cat_1, input$quanti_cat_2, input$quanti_cat_3),
+        sample_pct = input$sample_pct,
         model = input$model
       )
     }
 
-    # Reactive to rearrange dataset
     modified_data <- eventReactive(input$run, {
       req(input$selected_var)
       selected_var <- input$selected_var
       dataset[, c(selected_var, setdiff(names(dataset), selected_var))]
     })
 
-    # Reactive analysis results
     analysis_results <- eventReactive(input$run, {
       req(modified_data())
-      params <- debug_input()  # Consolidated debug data
+      params <- debug_input()
       tryCatch({
         nail_condes_polish(
           data_modif = modified_data(),
@@ -137,14 +141,14 @@ shiny_nail_condes <- function(dataset) {
           generate = params$generate,
           quanti_threshold = params$quanti_threshold,
           quanti_cat = params$quanti_cat,
-          model = params$model  # Pass the model input
+          sample_pct = params$sample_pct,
+          model = params$model
         )
       }, error = function(e) {
         paste("Error:", e$message)
       })
     })
 
-    # Render the analysis results
     output$function_output <- renderPrint({
       req(analysis_results())
       cat(analysis_results())
