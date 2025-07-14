@@ -1,6 +1,6 @@
 Package: PolisheR
 Title: Interfacing 'NaileR' with 'Shiny'
-Version: 1.1.1
+Version: 1.1.2
 Authors@R: 
     person('Sébastien', 'Lê', role = c('aut', 'cre'), email = 'sebastien.le@institut-agro.fr',
     comment = c(ORCID = "0000-0001-8814-6714"))
@@ -15,7 +15,9 @@ Imports:
     shiny,
     shinycssloaders,
     FactoMineR,
-    stringr
+    stringr,
+    rmarkdown,
+    shinyjs
 Depends: 
     R (>= 4.1.0)
 Suggests:

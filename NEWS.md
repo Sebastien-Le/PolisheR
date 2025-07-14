@@ -1,3 +1,8 @@
+# PolisheR 1.1.2
+
+## New Features
+- Improved `shiny_nail_qda()` with report generation.
+
 # PolisheR 1.1.1
 
 ## New Features
