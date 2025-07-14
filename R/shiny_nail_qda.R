@@ -1,5 +1,6 @@
 library(shiny)
 library(dplyr)
+library(ollamar)
 library(shinyjs)
 library(shinycssloaders)
 
@@ -21,15 +22,55 @@ nail_qda_polish <- function(data, formula, custom_text_1, custom_text_2, custom_
     generate = param3
   )
 
+  # if (param1 && param3) {
+  #   results <- paste(sapply(res_nail_qda, function(x) x$response), collapse = "\n***************\n")
+  # } else if (param3) {
+  #   results <- res_nail_qda$response
+  # } else {
+  #   results <- res_nail_qda
+  # }
+  #
+  # return(results)
+
   if (param1 && param3) {
-    results <- paste(sapply(res_nail_qda, function(x) x$response), collapse = "\n***************\n")
+    # Cas où chaque groupe a sa propre réponse
+    individual_blocks <- sapply(res_nail_qda, function(x) x$response)
+    raw_merged <- paste(individual_blocks, collapse = "\n***************\n")
+
+    # Nouveau prompt de structuration
+    meta_prompt <- paste0(
+      "You are now tasked with editing the following collection of descriptions.\n\n",
+      "Each section is separated by a line with `***************`.\n",
+      "Your goal is to produce a clear and well-structured report in **Quarto Markdown** format.\n\n",
+      "For each part:\n",
+      "- Use a consistent format with headings and bullets when relevant.\n",
+      "- Avoid repeating the separator.\n",
+      "- Produce a unified, readable document.\n\n",
+      "Here is the raw content:\n\n",
+      raw_merged
+    )
+
+    # Appel final au modèle pour structuration
+    final_response <- ollamar::generate(
+      prompt = meta_prompt,
+      model = model,
+      output = "text"
+    )
+
+    #print(str(final_response))  # Diagnostic
+    #print(final_response$response)
+    results <- final_response
+
   } else if (param3) {
+    # Cas classique : une seule réponse
     results <- res_nail_qda$response
   } else {
+    # Cas sans génération (juste le prompt)
     results <- res_nail_qda
   }
 
   return(results)
+
 }
 
 #' Launch a Shiny app for analyzing Quantitative Descriptive Analysis data (QDA)
