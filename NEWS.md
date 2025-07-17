@@ -2,6 +2,8 @@
 
 ## New Features
 - Improved `shiny_nail_qda()` with report generation.
+- Improved `shiny_nail_catdes()` with report generation.
+- Improved `shiny_nail_condes()` with report generation.
 
 # PolisheR 1.1.1
 
