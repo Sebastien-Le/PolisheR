@@ -2,6 +2,7 @@ library(shiny)
 library(dplyr)
 library(shinycssloaders)
 
+#' @importFrom utils capture.output
 #' @importFrom NaileR nail_condes
 nail_condes_polish <- function(data_modif, introduction, request, proba, generate,
                                quanti_threshold, quanti_cat, sample_pct, model = "llama3") {
@@ -91,6 +92,10 @@ shiny_nail_condes <- function(dataset) {
       mainPanel(
         h4("nail_condes results: a prompt or the result of the request"),
         verbatimTextOutput("function_output") %>% shinycssloaders::withSpinner(),
+        conditionalPanel(
+          condition = "input.generate == true",
+          actionButton("generate_docx", "Generate Word Document (.docx)")
+        ),
         tags$style(
           "#function_output {
             height: 300px;
@@ -153,6 +158,40 @@ shiny_nail_condes <- function(dataset) {
       req(analysis_results())
       cat(analysis_results())
     })
+
+    observeEvent(input$generate_docx, {
+      req(analysis_results(), input$generate)
+
+      result <- analysis_results()
+
+      if (!is.character(result)) {
+        result <- capture.output(print(result))
+      }
+
+      # Crée un fichier temporaire .Rmd
+      rmd_file <- tempfile(fileext = ".Rmd")
+      writeLines(result, con = rmd_file)
+
+      # Fichier de sortie sur le bureau
+      desktop_dir <- file.path(path.expand("~"), "Desktop")
+      file_name <- paste0("nail_condes_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".docx")
+      output_file <- file.path(desktop_dir, file_name)
+
+      # Génère le .docx avec rmarkdown
+      rmarkdown::render(
+        input = rmd_file,
+        output_format = "word_document",
+        output_file = output_file,
+        quiet = TRUE
+      )
+
+      # Ouvre le document (sur macOS, à adapter si Windows)
+      system2("open", shQuote(output_file))
+
+      # Notification utilisateur
+      showNotification("Word document generated and opened.", type = "message")
+    })
+
   }
 
   shinyApp(ui, server)
