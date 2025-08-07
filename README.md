@@ -64,7 +64,9 @@ df <- data.frame(
   "In general, do you trust food labels?" = c(4, 5, 2)
 )
 
-shiny_renaime(df)
+res <- shiny_renaime(df)
+res$data_recoded
+res$labels$label_short
 ```
 
 This launches an app that: - Uses a local LLM via
