@@ -1,3 +1,10 @@
+# PolisheR 1.1.3
+
+## New Features
+- New function `shiny_renaime()`: an interactive app to generate short, meaningful variable names using a local LLM.
+- `shiny_renaime()` includes manual editing, download, and relabelling features.
+- Added progress indicator and error/warning notifications during label generation (e.g., duplicates or missing outputs).
+
 # PolisheR 1.1.2
 
 ## New Features
