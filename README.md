@@ -18,7 +18,7 @@
 <!-- badges: end -->
 
 **PolisheR** is an extension package for
-[`NaileR`](https://github.com/Sebastien-Le/NaileR), designed to make
+[`NaileR`](https://github.com/Nelhe/NaileR), designed to make
 statistical outputs easier to read, interpret, and communicate. It
 provides interactive Shiny applications that use Language Models (LLMs)
 to help you **recode**, **summarize**, and **rename** variables and
