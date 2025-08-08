@@ -5,7 +5,7 @@
 \title{Launch a Shiny App to Rename Data Frame Columns via LLM}
 \usage{
 shiny_renaime(
-  data = NULL,
+  data,
   model = "llama3",
   prompt_prefix = NULL,
   prompt_suffix = NULL,
@@ -13,7 +13,7 @@ shiny_renaime(
 )
 }
 \arguments{
-\item{data}{Optional data frame or tibble. If NULL, a CSV upload is prompted.}
+\item{data}{A data frame or tibble.}
 
 \item{model}{Character string specifying the LLM model name. Default is "llama3".}
 

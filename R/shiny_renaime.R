@@ -1,8 +1,9 @@
+library(shinycssloaders)
 #' Launch a Shiny App to Rename Data Frame Columns via LLM
 #'
 #' This function launches a Shiny app to generate and validate short variable names using a local LLM.
 #'
-#' @param data Optional data frame or tibble. If NULL, a CSV upload is prompted.
+#' @param data A data frame or tibble.
 #' @param model Character string specifying the LLM model name. Default is "llama3".
 #' @param prompt_prefix String used before each input to instruct the LLM. Default is a general renaming instruction.
 #' @param prompt_suffix String used after each input to enforce format. Default includes a clear example.
@@ -22,12 +23,18 @@
 #'
 #' @import shiny
 #' @importFrom utils read.csv write.csv
-shiny_renaime <- function(data = NULL,
+shiny_renaime <- function(data,
                           model = "llama3",
                           prompt_prefix = NULL,
                           prompt_suffix = NULL,
                           max_length = 20) {
 
+  # --- Guards ---------------------------------------------------------------
+  if (missing(data) || is.null(data) || !is.data.frame(data)) {
+    stop("`data` must be a non-NULL data frame.", call. = FALSE)
+  }
+
+  # --- Defaults -------------------------------------------------------------
   if (is.null(prompt_prefix)) {
     prompt_prefix <- "Rename each variable with a short, clear name (less than 20 characters) that preserves its meaning. Keep verbs when present - they carry essential meaning."
   }
@@ -43,6 +50,7 @@ shiny_renaime <- function(data = NULL,
     )
   }
 
+  # --- Helper: call LLM per variable ---------------------------------------
   generate_labels_short <- function(varnames,
                                     model = "llama3",
                                     prompt_prefix,
@@ -52,15 +60,16 @@ shiny_renaime <- function(data = NULL,
       stop("The 'ollamar' package must be installed.")
     }
 
-    labels <- character(length(varnames))
+    labels  <- character(length(varnames))
     prompts <- character(length(varnames))
-    failed <- character(0)
+    failed  <- character(0)
 
     for (i in seq_along(varnames)) {
       v <- varnames[i]
 
+      # Keep original if already short enough
       if (nchar(v) <= max_length) {
-        labels[i] <- v
+        labels[i]  <- v
         prompts[i] <- NA
         next
       }
@@ -76,11 +85,11 @@ shiny_renaime <- function(data = NULL,
       success <- FALSE
 
       try({
-        response <- ollamar::generate(model = model, prompt = full_prompt, output = "text")
-        response_text <- trimws(strsplit(response, "\n")[[1]][1])
-        response_text <- gsub("^Output:\\s*", "", response_text)
-        response_text <- gsub('[\"\'""]', "", response_text)  # clean quotes
-        labels[i] <- response_text
+        resp <- ollamar::generate(model = model, prompt = full_prompt, output = "text")
+        out  <- trimws(strsplit(resp, "\n")[[1]][1])
+        out  <- gsub("^Output:\\s*", "", out)
+        out  <- gsub('[\"\'"]', "", out)
+        labels[i] <- out
         success <- TRUE
       }, silent = TRUE)
 
@@ -90,33 +99,22 @@ shiny_renaime <- function(data = NULL,
       }
     }
 
-    duplicated_labels <- labels[duplicated(labels) & !is.na(labels)]
-    if (length(duplicated_labels) > 0) {
-      warning("Some labels are not unique: ", paste(unique(duplicated_labels), collapse = ", "))
-    }
-
-    if (length(failed) > 0) {
-      warning("Label generation failed for: ", paste(failed, collapse = "\n"))
-    }
-
     data.frame(
-      varname = varnames,
+      varname     = varnames,
       label_short = labels,
-      prompt = prompts,
+      prompt      = prompts,
       stringsAsFactors = FALSE
     )
   }
 
+  # --- App state ------------------------------------------------------------
   app_values <- reactiveValues(data_recoded = NULL, labels = NULL)
 
   ui <- fluidPage(
     titlePanel("Rename Variable Names via LLM"),
     sidebarLayout(
       sidebarPanel(
-        conditionalPanel(
-          condition = "output.allow_upload",
-          fileInput("file", "Upload a .csv file", accept = ".csv")
-        ),
+        #p(strong("Columns to rename:"), paste(names(data), collapse = ", ")),
         actionButton("generate", "Generate short names"),
         actionButton("apply_labels", "Apply and return results"),
         downloadButton("download", "Download label mapping"),
@@ -126,123 +124,113 @@ shiny_renaime <- function(data = NULL,
           "Note: The 'Generate' button uses the original column names only. ",
           "It will not reapply to already edited names. To make changes, edit the fields manually."
         )
-      )
-      ,
+      ),
       mainPanel(
-        uiOutput("labels_ui")
+        p(strong("Columns to rename:"), paste(names(data), collapse = ", ")),
+        # Spinner appears while labels_ui waits for labels_generated()
+        shinycssloaders::withSpinner(uiOutput("labels_ui"))
       )
     )
   )
 
   server <- function(input, output, session) {
-    data_input <- reactiveVal(NULL)
-    labels_df <- reactiveVal(NULL)
+    data_input <- reactiveVal(data)
 
-    if (!is.null(data)) {
-      data_input(data)
-      output$allow_upload <- reactive(FALSE)
-    } else {
-      output$allow_upload <- reactive(TRUE)
-    }
-    outputOptions(output, "allow_upload", suspendWhenHidden = FALSE)
-
-    observeEvent(input$file, {
-      req(input$file)
-      df <- read.csv(input$file$datapath, stringsAsFactors = TRUE, sep = ";")
-      data_input(df)
-      labels_df(NULL)
-    })
-
-    observeEvent(input$generate, {
-      req(data_input())
+    # Trigger LLM generation on click
+    labels_generated <- eventReactive(input$generate, {
       vars <- names(data_input())
-      labels_df(NULL)
+      generate_labels_short(
+        varnames      = vars,
+        model         = model,
+        prompt_prefix = prompt_prefix,
+        prompt_suffix = prompt_suffix,
+        max_length    = max_length
+      )
+    }, ignoreInit = TRUE)
 
-      withProgress(message = "Generating labels...", value = 0, {
-        result <- generate_labels_short(
-          varnames = vars,
-          model = model,
-          prompt_prefix = prompt_prefix,
-          prompt_suffix = prompt_suffix,
-          max_length = max_length
-        )
-        labels_df(result)
-        if (any(is.na(result$label_short))) {
-          showNotification(
-            paste("Label generation failed for some variables."),
-            type = "warning",
-            duration = 5
-          )
-        }
-        if (any(duplicated(result$label_short[!is.na(result$label_short)]))) {
-          showNotification(
-            paste("Some generated labels are not unique."),
-            type = "warning",
-            duration = 5
-          )
-        }
-      })
-    })
-
-    output$labels_ui <- renderUI({
-      req(labels_df())
-      df <- labels_df()
-      lapply(1:nrow(df), function(i) {
-        tagList(
-          strong(df$varname[i]),
-          textInput(
-            inputId = paste0("label_", i),
-            label = NULL,
-            value = df$label_short[i],
-            width = "100%"
-          ),
-          tags$hr()
-        )
-      })
-    })
-
-    observe({
-      req(labels_df())
-      df <- labels_df()
-      for (i in 1:nrow(df)) {
-        val <- input[[paste0("label_", i)]]
-        if (!is.null(val)) {
-          df$label_short[i] <- val
-        }
+    # Warn after generation
+    observeEvent(labels_generated(), {
+      res <- labels_generated()
+      if (any(is.na(res$label_short))) {
+        showNotification("Label generation failed for some variables.", type = "warning", duration = 5)
       }
-      labels_df(df)
+      if (any(duplicated(res$label_short[!is.na(res$label_short)]))) {
+        showNotification("Some generated labels are not unique.", type = "warning", duration = 5)
+      }
     })
 
+    # UI for editing labels
+    output$labels_ui <- renderUI({
+      res <- labels_generated()
+      req(res)
+      tagList(
+        lapply(seq_len(nrow(res)), function(i) {
+          tagList(
+            strong(res$varname[i]),
+            textInput(
+              inputId = paste0("label_", i),
+              label   = NULL,
+              value   = res$label_short[i],
+              width   = "100%"
+            ),
+            tags$hr()
+          )
+        })
+      )
+    })
+
+    # Download mapping (current edits included)
     output$download <- downloadHandler(
       filename = function() paste0("labels_", Sys.Date(), ".csv"),
-      content = function(file) {
-        df <- labels_df()
-        df$prompt <- gsub("\n", " ", df$prompt)  #  Remove newlines for clean CSV
-        write.csv(df, file, row.names = FALSE, fileEncoding = "UTF-8")
+      content  = function(file) {
+        res <- labels_generated()
+        req(res)
+        edited <- vapply(seq_len(nrow(res)), function(i) {
+          val <- input[[paste0("label_", i)]]
+          if (is.null(val)) res$label_short[i] else val
+        }, FUN.VALUE = character(1))
+        out <- data.frame(
+          varname     = res$varname,
+          label_short = edited,
+          prompt      = gsub("\n", " ", res$prompt),
+          stringsAsFactors = FALSE
+        )
+        write.csv(out, file, row.names = FALSE, fileEncoding = "UTF-8")
       }
     )
 
+    # Apply labels and return
     observeEvent(input$apply_labels, {
-      req(data_input(), labels_df())
-      df <- data_input()
-      label_map <- labels_df()
+      req(labels_generated())
+      df  <- data_input()
+      res <- labels_generated()
 
-      if (nrow(label_map) != ncol(df)) {
+      edited <- vapply(seq_len(nrow(res)), function(i) {
+        val <- input[[paste0("label_", i)]]
+        if (is.null(val)) res$label_short[i] else val
+      }, FUN.VALUE = character(1))
+
+      if (length(edited) != ncol(df)) {
         output$action_status <- renderText("Error: Number of labels doesn't match number of columns.")
         return()
       }
-      if (any(duplicated(label_map$label_short))) {
+      if (any(duplicated(edited))) {
         output$action_status <- renderText("Error: Some new names are duplicated.")
         return()
       }
 
-      names(df) <- label_map$label_short
+      names(df) <- edited
       app_values$data_recoded <- df
-      app_values$labels <- label_map
+      app_values$labels       <- data.frame(
+        varname     = res$varname,
+        label_short = edited,
+        prompt      = res$prompt,
+        stringsAsFactors = FALSE
+      )
 
       stopApp(invisible(list(
         data_recoded = df,
-        labels = label_map
+        labels       = app_values$labels
       )))
     })
   }
